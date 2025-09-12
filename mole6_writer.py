@@ -72,7 +72,7 @@ def light_up_mole(light_index):
     """
     start_pixel, end_pixel = get_pixel_indices_for_light(light_index)
     for i in range(start_pixel, end_pixel):
-        plasma.set_pixel(i, MOLE_COLOR[0], MOLE_COLOR[1], MOLE_COLOR[2], brightness=1.0)
+        plasma.set_pixel(i, MOLE_COLOR[0], MOLE_COLOR[1], MOLE_COLOR[2], brightness=0.25)
     plasma.show()
 
 def turn_off_mole(light_index):
@@ -82,17 +82,17 @@ def turn_off_mole(light_index):
     if light_index is not None:
         start_pixel, end_pixel = get_pixel_indices_for_light(light_index)
         for i in range(start_pixel, end_pixel):
-            plasma.set_pixel(i, 0, 0, 0, brightness=1.0)
+            plasma.set_pixel(i, 0, 0, 0, brightness=0.25)
         plasma.show()
 
 def light_up_all_red():
     """
     Lights up all buttons with a red color for a short duration.
     """
-    plasma.set_all(255, 0, 0, brightness=1.0) # Set to red
+    plasma.set_all(255, 0, 0, brightness=0.25) # Set to red
     plasma.show()
     time.sleep(PENALTY_FLASH_DURATION)
-    plasma.set_all(0, 0, 0, brightness=0.5) # Turn all lights off
+    plasma.set_all(0, 0, 0, brightness=0.25) # Turn all lights off
     plasma.show()
 
 def countdown_sequence():
@@ -100,10 +100,10 @@ def countdown_sequence():
     Performs a visual countdown before the game starts.
     """
     # Flash all buttons blue as a "ready" signal.
-    plasma.set_all(0, 0, 255, brightness=0.5) # Blue
+    plasma.set_all(0, 0, 255, brightness=0.25) # Blue
     plasma.show()
     time.sleep(COUNTDOWN_FLASH_DURATION * 2)
-    plasma.set_all(0, 0, 0, brightness=0.5)
+    plasma.set_all(0, 0, 0, brightness=0.25)
     time.sleep(COUNTDOWN_FLASH_DURATION)
 
     # Flash a white countdown (3, 2, 1) on the first three buttons.
@@ -124,7 +124,7 @@ def light_up_pixel_group(light_index, color):
     """
     start_pixel, end_pixel = get_pixel_indices_for_light(light_index)
     for i in range(start_pixel, end_pixel):
-        plasma.set_pixel(i, color[0], color[1], color[2], brightness=0.5)
+        plasma.set_pixel(i, color[0], color[1], color[2], brightness=0.25)
     plasma.show()
 
 try:
@@ -153,7 +153,7 @@ try:
         print("Press the '5' button to start...")
         
         # Turn off all lights and only light up button 5
-        plasma.set_all(0, 0, 0, brightness=0.5)
+        plasma.set_all(0, 0, 0, brightness=0.25)
         light_up_pixel_group(KEY_TO_LIGHT_INDEX[ecodes.KEY_5], (255, 255, 255))
 
         # Wait for the '5' button press to start the game.
@@ -243,7 +243,7 @@ try:
         turn_off_mole(active_mole_light_index)
         
         # Light up all buttons white at the end of the game
-        plasma.set_all(255, 255, 255, brightness=0.5)
+        plasma.set_all(255, 255, 255, brightness=0.25)
         plasma.show()
         
         print("-" * 20)
@@ -255,7 +255,7 @@ try:
         
         print("\nGame restarting in 5 seconds...")
         time.sleep(5)
-        plasma.set_all(0, 0, 0, brightness=0.5)
+        plasma.set_all(0, 0, 0, brightness=0.25)
         plasma.show()
 
 except FileNotFoundError:
