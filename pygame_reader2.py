@@ -37,9 +37,14 @@ try:
     background_image = pygame.image.load('background.png').convert()
     background_image = pygame.transform.scale(background_image, (WIDTH, HEIGHT))
 
+    # Create a blurred version of the background image
+    downscaled_size = (WIDTH // 10, HEIGHT // 10) # Adjust blur strength here
+    downscaled_image = pygame.transform.smoothscale(background_image, downscaled_size)
+    blurred_background_image = pygame.transform.smoothscale(downscaled_image, (WIDTH, HEIGHT))
+
     # Load and scale the mole image
     mole_image = pygame.image.load('mole.png').convert_alpha()
-    mole_image = pygame.transform.scale(mole_image, (80, 80))
+    mole_image = pygame.transform.scale(mole_image, (100, 100))
 
 except pygame.error as e:
     print(f"Could not load image file: {e}")
@@ -47,9 +52,9 @@ except pygame.error as e:
 
 # --- Game State Variables ---
 mole_positions = []
-# Calculate spacing, reducing it by half as requested
-MOLE_SPACING_X = (WIDTH - 3 * mole_image.get_width()) // 16
-MOLE_SPACING_Y = (HEIGHT - 3 * mole_image.get_height()) // 16
+# Adjust spacing to make it smaller
+MOLE_SPACING_X = (WIDTH - 3 * mole_image.get_width()) // 8
+MOLE_SPACING_Y = (HEIGHT - 3 * mole_image.get_height()) // 8
 
 # Calculate the dimensions of the entire 3x3 mole grid
 grid_width = 3 * mole_image.get_width() + 2 * MOLE_SPACING_X
@@ -72,14 +77,31 @@ current_score = 0
 time_left = 0
 game_state = "waiting"
 start_time = None # New variable to store the start time for the elapsed timer
+countdown_start_time = None # New variable for the countdown timer
 
 def draw_moles(start_mode=False, hit_mode=False, miss_mode=False):
     """Draw all moles and the background, highlighting the active one with an image."""
-    # Draw the background first
-    screen.blit(background_image, (0, 0))
     
-    # NOTE: The mole holes are now part of the background image, so they are not drawn here.
+    # --- CHANGED: Updated mole hole colors to your specified RGB values ---
+    HOLE_HIGHLIGHT_COLOR = (79, 98, 54)
+    HOLE_SHADOW_COLOR = (29, 48, 4)
+    HOLE_CENTER_COLOR = (49, 68, 24)
+    # --- END CHANGED ---
 
+    HOLE_RADIUS = 60
+
+    for pos in mole_positions:
+        # Draw a dark circle slightly offset down and right for the shadow
+        shadow_center = (pos.center[0] + 3, pos.center[1] + 3)
+        pygame.draw.circle(screen, HOLE_SHADOW_COLOR, shadow_center, HOLE_RADIUS)
+        
+        # Draw the main, slightly smaller hole circle
+        pygame.draw.circle(screen, HOLE_CENTER_COLOR, pos.center, HOLE_RADIUS - 3)
+
+        # Draw a light arc or small circle for the highlight on the top-left
+        highlight_center = (pos.center[0] - 3, pos.center[1] - 3)
+        pygame.draw.circle(screen, HOLE_HIGHLIGHT_COLOR, highlight_center, HOLE_RADIUS - 5)
+        
     if start_mode:
         # On the start screen, show a mole on the center button
         center_mole_rect = mole_image.get_rect(center=mole_positions[4].center)
@@ -103,7 +125,7 @@ def draw_moles(start_mode=False, hit_mode=False, miss_mode=False):
 
 def read_game_state():
     """Reads the game state from the shared file."""
-    global active_mole_index, current_score, time_left, game_state, start_time
+    global active_mole_index, current_score, time_left, game_state, start_time, countdown_start_time
 
     if not os.path.exists(GAME_STATE_FILE):
         return
@@ -113,7 +135,11 @@ def read_game_state():
             state_data = json.load(f)
             new_game_state = state_data.get('state', 'waiting')
             
-            # Check if the game state is transitioning to "playing"
+            # Check for transitions to handle timers
+            if game_state != "countdown" and new_game_state == "countdown":
+                # Start the local countdown timer when the state changes to 'countdown'
+                countdown_start_time = time.time()
+                
             if game_state != "playing" and new_game_state == "playing":
                 # Start the elapsed time counter
                 start_time = time.time()
@@ -137,8 +163,11 @@ try:
 
         read_game_state()
 
-        # Always draw the background first in the main loop
-        screen.blit(background_image, (0, 0))
+        # Choose which background to draw based on the game state
+        if game_state == "start_screen":
+            screen.blit(blurred_background_image, (0, 0))
+        else:
+            screen.blit(background_image, (0, 0))
 
         if game_state == "waiting":
             text = font.render("Waiting for the physical game to start...", True, WHITE)
@@ -150,9 +179,14 @@ try:
             text_rect = text.get_rect(center=(WIDTH // 2, HEIGHT // 2 + 100))
             screen.blit(text, text_rect)
         elif game_state == "countdown":
-            text = font.render(str(time_left), True, COUNTDOWN_FONT_COLOR)
-            text_rect = text.get_rect(center=(WIDTH // 2, HEIGHT // 2))
-            screen.blit(text, text_rect)
+            # Calculate and display the countdown based on the local timer
+            countdown_time = 3 - (time.time() - countdown_start_time)
+            countdown_display = max(0, int(countdown_time) + 1)
+            # Only display the countdown if it's a number greater than 0
+            if countdown_display > 0:
+                text = font.render(str(countdown_display), True, COUNTDOWN_FONT_COLOR)
+                text_rect = text.get_rect(center=(WIDTH // 2, HEIGHT // 2))
+                screen.blit(text, text_rect)
         elif game_state == "playing":
             draw_moles()
             # Draw score on the screen
